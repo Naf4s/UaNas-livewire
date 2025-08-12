@@ -17,6 +17,14 @@ class ManageCurriculum extends Component
     public $searchTemplate = '';
     public $jenisKurikulumFilter = '';
     public $statusFilter = '';
+    
+    // Properties untuk modal template kurikulum (Create)
+    public $showCreateTemplateModal = false;
+    public $nama_template_baru = '';
+    public $deskripsi_baru = '';
+    public $jenis_kurikulum_baru = '';
+    
+    // Properties untuk modal template kurikulum (Edit)
 
     // Properties untuk aspek penilaian
     public $selectedTemplateId = null;
@@ -45,6 +53,11 @@ class ManageCurriculum extends Component
         if ($firstTemplate) {
             $this->selectTemplate($firstTemplate->id);
         }
+    }
+
+    // Helper method to refresh template data
+    protected function loadTemplateData(){
+         $this->templates = $this->render()->getData()['templates'];
     }
 
     // Methods untuk template kurikulum
@@ -94,6 +107,68 @@ class ManageCurriculum extends Component
             $this->aspekPenilaianTree = [];
         }
     }
+
+    // Methods untuk modal template kurikulum (Create)
+    public function showCreateTemplateModal()
+    {
+        $this->resetCreateTemplateForm();
+        $this->showCreateTemplateModal = true;
+    }
+
+    public function closeCreateTemplateModal()
+    {
+        $this->showCreateTemplateModal = false;
+        $this->resetCreateTemplateForm();
+    }
+
+    public function resetCreateTemplateForm()
+    {
+        $this->nama_template_baru = '';
+        $this->deskripsi_baru = '';
+        $this->jenis_kurikulum_baru = '';
+    }
+
+    public function saveTemplate()
+    {
+        $this->validate([
+            'nama_template_baru' => 'required|string|max:255|unique:template_kurikulum,nama_template',
+            'deskripsi_baru' => 'nullable|string',
+            'jenis_kurikulum_baru' => 'required|string|max:255', // Tambahkan validasi sesuai jenis yang diizinkan
+        ], [], [
+            'nama_template_baru' => 'Nama Template',
+            'deskripsi_baru' => 'Deskripsi',
+            'jenis_kurikulum_baru' => 'Jenis Kurikulum',
+        ]);
+
+        try {
+            TemplateKurikulum::create([
+                'nama_template' => $this->nama_template_baru,
+                'deskripsi' => $this->deskripsi_baru,
+                'jenis_kurikulum' => $this->jenis_kurikulum_baru,
+                'status' => 'nonaktif', // Default status is nonaktif
+            ]);
+
+            session()->flash('message', 'Template kurikulum berhasil ditambahkan');
+
+            $this->closeCreateTemplateModal();
+            $this->loadTemplateData(); // Refresh the list
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Terjadi kesalahan saat menambahkan template: ' . $e->getMessage());
+        }
+    }
+
+    // Methods untuk modal template kurikulum (Edit)
+    // ... (Nanti akan ditambahkan metode showEditTemplateModal, updateTemplate, dll.)
+
+     public $editingTemplate = null;
+    public $isEditingTemplate = false;
+    public $nama_template_edit = '';
+    public $deskripsi_edit = '';
+    public $jenis_kurikulum_edit = '';
+    
+    public $showEditTemplateModal = false;
+
 
     // Methods untuk aspek penilaian
     public function selectTemplate($templateId)
@@ -246,6 +321,60 @@ class ManageCurriculum extends Component
         $this->loadAspekPenilaianTree();
     }
 
+    public function showEditTemplateModal($templateId)
+    {
+        $template = TemplateKurikulum::findOrFail($templateId);
+        
+        $this->editingTemplate = $template;
+        $this->isEditingTemplate = true;
+        $this->nama_template_edit = $template->nama_template;
+        $this->deskripsi_edit = $template->deskripsi;
+        $this->jenis_kurikulum_edit = $template->jenis_kurikulum;
+        
+        $this->showEditTemplateModal = true;
+    }
+    
+    public function closeEditTemplateModal()
+    {
+        $this->showEditTemplateModal = false;
+        $this->resetEditTemplateForm();
+    }
+    
+    public function resetEditTemplateForm()
+    {
+        $this->editingTemplate = null;
+        $this->isEditingTemplate = false;
+        $this->nama_template_edit = '';
+        $this->deskripsi_edit = '';
+        $this->jenis_kurikulum_edit = '';
+    }
+
+    public function updateTemplate()
+    {
+         $this->validate([
+            'nama_template_edit' => 'required|string|max:255|unique:template_kurikulum,nama_template,' . $this->editingTemplate->id,
+            'deskripsi_edit' => 'nullable|string',
+            'jenis_kurikulum_edit' => 'required|string|max:255', // Tambahkan validasi sesuai jenis yang diizinkan
+        ], [], [
+            'nama_template_edit' => 'Nama Template',
+            'deskripsi_edit' => 'Deskripsi',
+            'jenis_kurikulum_edit' => 'Jenis Kurikulum',
+        ]);
+
+        try {
+             $this->editingTemplate->update([
+                 'nama_template' => $this->nama_template_edit,
+                 'deskripsi' => $this->deskripsi_edit,
+                 'jenis_kurikulum' => $this->jenis_kurikulum_edit,
+             ]);
+             session()->flash('message', 'Template kurikulum berhasil diperbarui');
+             $this->closeEditTemplateModal();
+             $this->loadTemplateData(); // Refresh the list
+        } catch (\Exception $e) {
+            session()->flash('error', 'Terjadi kesalahan saat memperbarui template: ' . $e->getMessage());
+        }
+    }
+
     public function render()
     {
         $templates = TemplateKurikulum::query()
@@ -263,7 +392,7 @@ class ManageCurriculum extends Component
             ->orderBy('nama_template')
             ->paginate(10);
 
-        // Get available parent options for aspek form
+        // Get available parent options for aspek form (excluding the aspect being edited and its children)
         $parentOptions = [];
         if ($this->selectedTemplateId) {
             $parentOptions = AspekPenilaian::where('template_kurikulum_id', $this->selectedTemplateId)
