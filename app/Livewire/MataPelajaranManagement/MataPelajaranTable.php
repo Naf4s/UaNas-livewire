@@ -6,8 +6,10 @@ use App\Models\MataPelajaran;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Layout;
 
 #[Title('Manajemen Mata Pelajaran')]
+#[Layout('components.layouts.app')]
 class MataPelajaranTable extends Component
 {
     use WithPagination;
@@ -16,6 +18,15 @@ class MataPelajaranTable extends Component
     public $jenisFilter = '';
     public $kelompokFilter = '';
     public $statusFilter = '';
+    public $perPage = 15;
+
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'jenisFilter' => ['except' => ''],
+        'kelompokFilter' => ['except' => ''],
+        'statusFilter' => ['except' => ''],
+        'perPage' => ['except' => 15],
+    ];
 
     public function updatingSearch()
     {
@@ -37,34 +48,59 @@ class MataPelajaranTable extends Component
         $this->resetPage();
     }
 
+    public function updatingPerPage()
+    {
+        $this->resetPage();
+    }
+
+    public function resetFilters()
+    {
+        $this->reset(['search', 'jenisFilter', 'kelompokFilter', 'statusFilter']);
+        $this->resetPage();
+    }
+
     public function delete($mapelId)
     {
-        $mapel = MataPelajaran::findOrFail($mapelId);
-        
-        // Cek apakah mata pelajaran masih digunakan di sistem lain
-        // (bisa ditambahkan pengecekan relasi dengan tabel lain)
-        
-        $mapel->delete();
-        session()->flash('message', 'Mata pelajaran berhasil dihapus');
+        try {
+            $mapel = MataPelajaran::findOrFail($mapelId);
+            
+            // Cek apakah mata pelajaran masih digunakan di sistem lain
+            if (!$mapel->canBeDeleted()) {
+                $usageCount = $mapel->total_usage;
+                session()->flash('error', "Mata pelajaran tidak dapat dihapus karena masih digunakan di {$usageCount} tempat. Silakan nonaktifkan terlebih dahulu.");
+                return;
+            }
+            
+            $mapel->delete();
+            session()->flash('success', 'Mata pelajaran berhasil dihapus');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal menghapus mata pelajaran: ' . $e->getMessage());
+        }
     }
 
     public function toggleStatus($mapelId)
     {
-        $mapel = MataPelajaran::findOrFail($mapelId);
-        $newStatus = $mapel->status === 'aktif' ? 'nonaktif' : 'aktif';
-        $mapel->update(['status' => $newStatus]);
-        
-        $statusText = $newStatus === 'aktif' ? 'diaktifkan' : 'dinonaktifkan';
-        session()->flash('message', "Mata pelajaran {$mapel->nama_mapel} berhasil {$statusText}");
+        try {
+            $mapel = MataPelajaran::findOrFail($mapelId);
+            $newStatus = $mapel->status === 'aktif' ? 'nonaktif' : 'aktif';
+            $mapel->update(['status' => $newStatus]);
+            
+            $statusText = $newStatus === 'aktif' ? 'diaktifkan' : 'dinonaktifkan';
+            session()->flash('success', "Mata pelajaran {$mapel->nama_mapel} berhasil {$statusText}");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal mengubah status: ' . $e->getMessage());
+        }
     }
 
     public function render()
     {
         $mataPelajaran = MataPelajaran::query()
             ->when($this->search, function ($query) {
-                $query->where('nama_mapel', 'like', '%' . $this->search . '%')
-                    ->orWhere('kode_mapel', 'like', '%' . $this->search . '%')
-                    ->orWhere('deskripsi', 'like', '%' . $this->search . '%');
+                $query->where(function ($q) {
+                    $q->where('nama_mapel', 'like', '%' . $this->search . '%')
+                      ->orWhere('kode_mapel', 'like', '%' . $this->search . '%')
+                      ->orWhere('deskripsi', 'like', '%' . $this->search . '%');
+                });
             })
             ->when($this->jenisFilter, function ($query) {
                 $query->where('jenis', $this->jenisFilter);
@@ -77,10 +113,31 @@ class MataPelajaranTable extends Component
             })
             ->orderBy('kelompok')
             ->orderBy('nama_mapel')
-            ->paginate(15);
+            ->paginate($this->perPage);
+
+        $jenisOptions = [
+            'Wajib' => 'Mata Pelajaran Wajib',
+            'Peminatan' => 'Mata Pelajaran Peminatan',
+            'Lintas Minat' => 'Mata Pelajaran Lintas Minat',
+            'Muatan Lokal' => 'Mata Pelajaran Muatan Lokal'
+        ];
+
+        $kelompokOptions = [
+            'A' => 'Kelompok A (Wajib)',
+            'B' => 'Kelompok B (Wajib)',
+            'C' => 'Kelompok C (Peminatan)'
+        ];
+
+        $statusOptions = [
+            'aktif' => 'Aktif',
+            'nonaktif' => 'Nonaktif'
+        ];
 
         return view('livewire.mata-pelajaran-management.mata-pelajaran-table', [
-            'mataPelajaran' => $mataPelajaran
+            'mataPelajaran' => $mataPelajaran,
+            'jenisOptions' => $jenisOptions,
+            'kelompokOptions' => $kelompokOptions,
+            'statusOptions' => $statusOptions,
         ]);
     }
 }

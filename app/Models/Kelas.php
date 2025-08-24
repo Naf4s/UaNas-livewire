@@ -14,7 +14,6 @@ class Kelas extends Model
     protected $fillable = [
         'nama_kelas',
         'tingkat',
-        'jurusan',
         'deskripsi',
         'status'
     ];
@@ -29,8 +28,5 @@ class Kelas extends Model
         return $this->status === 'aktif';
     }
 
-    public function getTingkatJurusanAttribute()
-    {
-        return $this->tingkat . ' ' . ($this->jurusan ?? '');
-    }
+
 }

@@ -19,7 +19,7 @@ class RombelForm extends Component
     #[Rule('required|string|max:255')]
     public $nama_rombel = '';
 
-    #[Rule('required|string|max:255|unique:rombel,kode_rombel')]
+    #[Rule('required|string|max:255')]
     public $kode_rombel = '';
 
     #[Rule('required|integer|min:1|max:100')]
@@ -51,47 +51,59 @@ class RombelForm extends Component
         }
     }
 
+    public function updatedKodeRombel()
+    {
+        // Reset validation error for kode_rombel when user types
+        $this->resetValidation('kode_rombel');
+    }
+
     public function save()
     {
+        // Custom validation for kode_rombel uniqueness
+        $kodeRule = 'required|string|max:255|unique:rombel,kode_rombel';
         if ($this->isEditing) {
-            $this->validate([
-                'kelas_id' => 'required|exists:kelas,id',
-                'nama_rombel' => 'required|string|max:255',
-                'kode_rombel' => 'required|string|max:255|unique:rombel,kode_rombel,' . $this->rombel->id,
-                'kapasitas' => 'required|integer|min:1|max:100',
-                'wali_kelas_id' => 'nullable|exists:users,id',
-                'deskripsi' => 'nullable|string',
-                'status' => 'required|in:aktif,nonaktif',
-            ]);
-        } else {
-            $this->validate();
+            $kodeRule .= ',' . $this->rombel->id;
         }
 
-        if ($this->isEditing) {
-            $this->rombel->update([
-                'kelas_id' => $this->kelas_id,
-                'nama_rombel' => $this->nama_rombel,
-                'kode_rombel' => $this->kode_rombel,
-                'kapasitas' => $this->kapasitas,
-                'wali_kelas_id' => $this->wali_kelas_id,
-                'deskripsi' => $this->deskripsi,
-                'status' => $this->status,
-            ]);
-        } else {
-            Rombel::create([
-                'kelas_id' => $this->kelas_id,
-                'nama_rombel' => $this->nama_rombel,
-                'kode_rombel' => $this->kode_rombel,
-                'kapasitas' => $this->kapasitas,
-                'wali_kelas_id' => $this->wali_kelas_id,
-                'deskripsi' => $this->deskripsi,
-                'status' => $this->status,
-                'jumlah_siswa' => 0,
-            ]);
-        }
+        $this->validate([
+            'kelas_id' => 'required|exists:kelas,id',
+            'nama_rombel' => 'required|string|max:255',
+            'kode_rombel' => $kodeRule,
+            'kapasitas' => 'required|integer|min:1|max:100',
+            'wali_kelas_id' => 'nullable|exists:users,id',
+            'deskripsi' => 'nullable|string',
+            'status' => 'required|in:aktif,nonaktif',
+        ]);
 
-        session()->flash('message', 'Rombongan belajar berhasil ' . ($this->isEditing ? 'diperbarui' : 'ditambahkan'));
-        return redirect()->route('rombel.index');
+        try {
+            if ($this->isEditing) {
+                $this->rombel->update([
+                    'kelas_id' => $this->kelas_id,
+                    'nama_rombel' => $this->nama_rombel,
+                    'kode_rombel' => $this->kode_rombel,
+                    'kapasitas' => $this->kapasitas,
+                    'wali_kelas_id' => $this->wali_kelas_id,
+                    'deskripsi' => $this->deskripsi,
+                    'status' => $this->status,
+                ]);
+            } else {
+                Rombel::create([
+                    'kelas_id' => $this->kelas_id,
+                    'nama_rombel' => $this->nama_rombel,
+                    'kode_rombel' => $this->kode_rombel,
+                    'kapasitas' => $this->kapasitas,
+                    'wali_kelas_id' => $this->wali_kelas_id,
+                    'deskripsi' => $this->deskripsi,
+                    'status' => $this->status,
+                    'jumlah_siswa' => 0,
+                ]);
+            }
+
+            session()->flash('message', 'Rombongan belajar berhasil ' . ($this->isEditing ? 'diperbarui' : 'ditambahkan'));
+            return redirect()->route('rombel.index');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     public function render()

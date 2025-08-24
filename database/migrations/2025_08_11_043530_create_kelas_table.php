@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('kelas', function (Blueprint $table) {
             $table->id();
             $table->string('nama_kelas');
-            $table->string('tingkat'); // X, XI, XII
-            $table->string('jurusan')->nullable(); // IPA, IPS, dll
+            $table->string('tingkat'); // I, II, III, IV, V, VI
             $table->text('deskripsi')->nullable();
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->timestamps();

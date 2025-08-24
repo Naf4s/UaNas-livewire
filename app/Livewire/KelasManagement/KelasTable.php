@@ -49,8 +49,7 @@ class KelasTable extends Component
     {
         $kelas = Kelas::query()
             ->when($this->search, function ($query) {
-                $query->where('nama_kelas', 'like', '%' . $this->search . '%')
-                    ->orWhere('jurusan', 'like', '%' . $this->search . '%');
+                $query->where('nama_kelas', 'like', '%' . $this->search . '%');
             })
             ->when($this->tingkatFilter, function ($query) {
                 $query->where('tingkat', $this->tingkatFilter);

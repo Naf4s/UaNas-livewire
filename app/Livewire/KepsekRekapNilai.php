@@ -7,6 +7,7 @@ use App\Models\Siswa;
 use App\Models\Kelas;
 use App\Models\Grade;
 use App\Models\MataPelajaran;
+use App\Models\Rombel;
 
 class KepsekRekapNilai extends Component
 {
@@ -17,7 +18,7 @@ class KepsekRekapNilai extends Component
 
     public function mount()
     {
-        $this->kelasList = Kelas::orderBy('nama')->get();
+        $this->kelasList = Kelas::orderBy('tingkat')->get();
         $this->kelasId = $this->kelasList->first()->id ?? '';
         $this->loadRekap();
     }
@@ -37,9 +38,15 @@ class KepsekRekapNilai extends Component
             $this->rekap = [];
             return;
         }
-        $this->siswaList = Siswa::where('kelas_id', $this->kelasId)->orderBy('nama')->get();
-        $mataPelajaran = MataPelajaran::orderBy('nama')->get();
+
+        // Get siswa through rombel relationship
+        $this->siswaList = Siswa::whereHas('rombel', function($query) {
+            $query->where('kelas_id', $this->kelasId);
+        })->get();
+
+        $mataPelajaran = MataPelajaran::orderBy('nama_mapel')->get();
         $this->rekap = [];
+        
         foreach ($this->siswaList as $siswa) {
             $nilai = [];
             foreach ($mataPelajaran as $mapel) {

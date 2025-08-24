@@ -73,6 +73,52 @@ class Siswa extends Model
                     ->withPivot('tahun_ajaran', 'semester', 'tanggal_masuk_rombel');
     }
 
+    // Add missing kelas relationship through rombel
+    public function kelas()
+    {
+        return $this->hasManyThrough(
+            Kelas::class,
+            Rombel::class,
+            'id', // Foreign key on rombel table
+            'id', // Foreign key on kelas table
+            'id', // Local key on siswa table
+            'kelas_id' // Local key on rombel table
+        )->join('siswa_rombel', 'rombel.id', '=', 'siswa_rombel.rombel_id')
+          ->where('siswa_rombel.siswa_id', $this->id)
+          ->where('siswa_rombel.status', 'aktif');
+    }
+
+    // Add direct access to current kelas through active rombel
+    public function getKelasAttribute()
+    {
+        $activeRombel = $this->rombelAktif()->first();
+        return $activeRombel ? $activeRombel->kelas : null;
+    }
+
+    // Add grades relationship
+    public function grades()
+    {
+        return $this->hasMany(Grade::class);
+    }
+
+    // Add absensi relationship
+    public function absensi()
+    {
+        return $this->hasMany(Absensi::class);
+    }
+
+    // Add catatanWaliKelas relationship
+    public function catatanWaliKelas()
+    {
+        return $this->hasMany(CatatanWaliKelas::class);
+    }
+
+    // Add usulanKenaikanKelas relationship
+    public function usulanKenaikanKelas()
+    {
+        return $this->hasMany(UsulanKenaikanKelas::class);
+    }
+
     public function getUmurAttribute()
     {
         return Carbon::parse($this->tanggal_lahir)->age;
@@ -107,5 +153,11 @@ class Siswa extends Model
         if ($this->kode_pos) $alamat .= ' ' . $this->kode_pos;
         
         return $alamat;
+    }
+
+    // Add accessor for nama (backward compatibility)
+    public function getNamaAttribute()
+    {
+        return $this->nama_lengkap;
     }
 }

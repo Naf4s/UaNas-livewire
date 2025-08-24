@@ -49,8 +49,16 @@ class RombelTable extends Component
     {
         $rombel = Rombel::with(['kelas', 'waliKelas'])
             ->when($this->search, function ($query) {
-                $query->where('nama_rombel', 'like', '%' . $this->search . '%')
-                    ->orWhere('kode_rombel', 'like', '%' . $this->search . '%');
+                $query->where(function($q) {
+                    $q->where('nama_rombel', 'like', '%' . $this->search . '%')
+                      ->orWhere('kode_rombel', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('kelas', function($k) {
+                          $k->where('nama_kelas', 'like', '%' . $this->search . '%');
+                      })
+                      ->orWhereHas('waliKelas', function($w) {
+                          $w->where('name', 'like', '%' . $this->search . '%');
+                      });
+                });
             })
             ->when($this->kelasFilter, function ($query) {
                 $query->where('kelas_id', $this->kelasFilter);

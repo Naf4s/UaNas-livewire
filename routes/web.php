@@ -25,7 +25,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/rekap-nilai', KepsekRekapNilai::class)->name('rekap-nilai');
     Route::get('/validasi-kenaikan', AdminValidasiKenaikan::class)->name('validasi-kenaikan');
 
-Route::middleware(['auth'])->group(function(){
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
@@ -34,6 +33,7 @@ Route::middleware(['auth'])->group(function(){
         Route::get('/', App\Livewire\UserManagement\UserTable::class)->name('index');
         Route::get('/create', App\Livewire\UserManagement\UserForm::class)->name('create');
         Route::get('/{user}/edit', App\Livewire\UserManagement\UserForm::class)->name('edit');
+        Route::delete('/{user}', App\Livewire\UserManagement\UserTable::class)->name('destroy');
     });
 
     // Kelas Management Routes
@@ -41,13 +41,21 @@ Route::middleware(['auth'])->group(function(){
         Route::get('/', App\Livewire\KelasManagement\KelasTable::class)->name('index');
         Route::get('/create', App\Livewire\KelasManagement\KelasForm::class)->name('create');
         Route::get('/{kelas}/edit', App\Livewire\KelasManagement\KelasForm::class)->name('edit');
+        Route::delete('/{kelas}', App\Livewire\KelasManagement\KelasTable::class)->name('destroy');
     });
 
     // Rombel Management Routes
     Route::prefix('rombel')->name('rombel.')->group(function () {
-        Route::get('/', App\Livewire\RombelManagement\RombelTable::class)->name('index');
-        Route::get('/create', App\Livewire\RombelManagement\RombelForm::class)->name('create');
-        Route::get('/{rombel}/edit', App\Livewire\RombelManagement\RombelForm::class)->name('edit');
+        Route::get('/', function () {
+            return view('rombel.index');
+        })->name('index');
+        Route::get('/create', function () {
+            return view('rombel.create');
+        })->name('create');
+        Route::get('/{rombel}/edit', function ($rombel) {
+            return view('rombel.edit', compact('rombel'));
+        })->name('edit');
+        Route::delete('/{rombel}', App\Livewire\RombelManagement\RombelTable::class)->name('destroy');
     });
 
     // Siswa Management Routes
@@ -64,6 +72,7 @@ Route::middleware(['auth'])->group(function(){
         Route::get('/', App\Livewire\MataPelajaranManagement\MataPelajaranTable::class)->name('index');
         Route::get('/create', App\Livewire\MataPelajaranManagement\MataPelajaranForm::class)->name('create');
         Route::get('/{mataPelajaran}/edit', App\Livewire\MataPelajaranManagement\MataPelajaranForm::class)->name('edit');
+        Route::delete('/{mataPelajaran}', App\Livewire\MataPelajaranManagement\MataPelajaranTable::class)->name('destroy');
     });
 
     // Curriculum Management Routes
@@ -73,7 +82,14 @@ Route::middleware(['auth'])->group(function(){
 
     // Grade Management Routes
     Route::prefix('penilaian')->name('penilaian.')->group(function () {
+        Route::get('/', App\Livewire\GradeManagement\GradeIndex::class)->name('index');
         Route::get('/input', App\Livewire\GradeManagement\GradeInput::class)->name('input');
+        Route::get('/history', App\Livewire\GradeManagement\GradeHistory::class)->name('history');
+        Route::get('/detail/{gradeId}', App\Livewire\GradeManagement\GradeDetail::class)->name('detail');
+        Route::get('/edit/{gradeId}', App\Livewire\GradeManagement\GradeInput::class)->name('edit');
+        Route::get('/report', App\Livewire\GradeManagement\GradeIndex::class)->name('report');
+        Route::get('/import', App\Livewire\GradeManagement\GradeIndex::class)->name('import');
+        Route::get('/export', App\Livewire\GradeManagement\GradeIndex::class)->name('export');
     });
 
     // Attendance Management Routes
@@ -86,7 +102,6 @@ Route::middleware(['auth'])->group(function(){
         Route::get('/catatan', App\Livewire\WaliKelasManagement\InputCatatanWaliKelas::class)->name('catatan');
         Route::get('/usulan-kenaikan', App\Livewire\WaliKelasManagement\ProposePromotion::class)->name('usulan-kenaikan');
     });
-});
 });
 
 require __DIR__.'/auth.php';

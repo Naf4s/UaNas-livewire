@@ -17,26 +17,35 @@ class ManageCurriculum extends Component
     public $searchTemplate = '';
     public $jenisKurikulumFilter = '';
     public $statusFilter = '';
+    public $showTemplateModal = false;
+    public $editingTemplate = null;
+    public $isEditingTemplate = false;
 
     // Properties untuk aspek penilaian
     public $selectedTemplateId = null;
     public $selectedTemplate = null;
     public $aspekPenilaianTree = [];
+    public $expandedAspeks = [];
 
     // Properties untuk modal aspek penilaian
     public $showAspekModal = false;
     public $editingAspek = null;
     public $isEditingAspek = false;
 
+    // Form properties untuk template kurikulum
+    public $nama_template = '';
+    public $deskripsi = '';
+    public $jenis_kurikulum = 'K13';
+    public $tahun_berlaku = '';
+    public $catatan = '';
+
     // Form properties untuk aspek penilaian
     public $nama_aspek = '';
-    public $deskripsi = '';
     public $tipe = 'domain';
     public $parent_id = '';
     public $urutan = 0;
     public $bobot = 0.00;
     public $status = 'aktif';
-    public $catatan = '';
 
     public function mount()
     {
@@ -45,6 +54,9 @@ class ManageCurriculum extends Component
         if ($firstTemplate) {
             $this->selectTemplate($firstTemplate->id);
         }
+        
+        // Set tahun default
+        $this->tahun_berlaku = date('Y');
     }
 
     // Methods untuk template kurikulum
@@ -95,6 +107,91 @@ class ManageCurriculum extends Component
         }
     }
 
+    // Methods untuk modal template kurikulum
+    public function showAddTemplateModal()
+    {
+        $this->resetTemplateForm();
+        $this->isEditingTemplate = false;
+        $this->showTemplateModal = true;
+    }
+
+    public function showEditTemplateModal($templateId)
+    {
+        $template = TemplateKurikulum::findOrFail($templateId);
+        
+        $this->editingTemplate = $template;
+        $this->isEditingTemplate = true;
+        $this->nama_template = $template->nama_template;
+        $this->deskripsi = $template->deskripsi;
+        $this->jenis_kurikulum = $template->jenis_kurikulum;
+        $this->tahun_berlaku = $template->tahun_berlaku;
+        $this->catatan = $template->catatan;
+        
+        $this->showTemplateModal = true;
+    }
+
+    public function closeTemplateModal()
+    {
+        $this->showTemplateModal = false;
+        $this->resetTemplateForm();
+    }
+
+    public function resetTemplateForm()
+    {
+        $this->editingTemplate = null;
+        $this->isEditingTemplate = false;
+        $this->nama_template = '';
+        $this->deskripsi = '';
+        $this->jenis_kurikulum = 'K13';
+        $this->tahun_berlaku = date('Y');
+        $this->catatan = '';
+    }
+
+    public function saveTemplate()
+    {
+        $this->validate([
+            'nama_template' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'jenis_kurikulum' => 'required|in:K13,Kurikulum Merdeka,Kurikulum 2024',
+            'tahun_berlaku' => 'required|string|max:4',
+            'catatan' => 'nullable|string',
+        ]);
+
+        try {
+            if ($this->isEditingTemplate && $this->editingTemplate) {
+                // Update existing template
+                $this->editingTemplate->update([
+                    'nama_template' => $this->nama_template,
+                    'deskripsi' => $this->deskripsi,
+                    'jenis_kurikulum' => $this->jenis_kurikulum,
+                    'tahun_berlaku' => $this->tahun_berlaku,
+                    'catatan' => $this->catatan,
+                ]);
+                
+                session()->flash('message', 'Template kurikulum berhasil diperbarui');
+            } else {
+                // Create new template
+                TemplateKurikulum::create([
+                    'nama_template' => $this->nama_template,
+                    'deskripsi' => $this->deskripsi,
+                    'jenis_kurikulum' => $this->jenis_kurikulum,
+                    'tahun_berlaku' => $this->tahun_berlaku,
+                    'catatan' => $this->catatan,
+                    'status' => 'nonaktif', // Default nonaktif
+                ]);
+                
+                session()->flash('message', 'Template kurikulum berhasil ditambahkan');
+            }
+
+            // Close modal dan refresh data
+            $this->closeTemplateModal();
+            $this->loadTemplateData();
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
     // Methods untuk aspek penilaian
     public function selectTemplate($templateId)
     {
@@ -115,6 +212,21 @@ class ManageCurriculum extends Component
             ->toArray();
     }
 
+    public function toggleAspekExpansion($aspekId)
+    {
+        if (in_array($aspekId, $this->expandedAspeks)) {
+            $this->expandedAspeks = array_diff($this->expandedAspeks, [$aspekId]);
+        } else {
+            $this->expandedAspeks[] = $aspekId;
+        }
+    }
+
+    public function loadTemplateData()
+    {
+        // Refresh templates list
+        $this->dispatch('$refresh');
+    }
+
     // Methods untuk modal aspek penilaian
     public function showAddAspekModal($parentId = null)
     {
@@ -131,13 +243,11 @@ class ManageCurriculum extends Component
         $this->editingAspek = $aspek;
         $this->isEditingAspek = true;
         $this->nama_aspek = $aspek->nama_aspek;
-        $this->deskripsi = $aspek->deskripsi;
         $this->tipe = $aspek->tipe;
         $this->parent_id = $aspek->parent_id;
         $this->urutan = $aspek->urutan;
         $this->bobot = $aspek->bobot;
         $this->status = $aspek->status;
-        $this->catatan = $aspek->catatan;
         
         $this->showAspekModal = true;
     }
@@ -153,26 +263,22 @@ class ManageCurriculum extends Component
         $this->editingAspek = null;
         $this->isEditingAspek = false;
         $this->nama_aspek = '';
-        $this->deskripsi = '';
         $this->tipe = 'domain';
         $this->parent_id = '';
         $this->urutan = 0;
         $this->bobot = 0.00;
         $this->status = 'aktif';
-        $this->catatan = '';
     }
 
     public function saveAspect()
     {
         $this->validate([
             'nama_aspek' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
             'tipe' => 'required|in:domain,aspek,indikator',
             'parent_id' => 'nullable|exists:aspek_penilaian,id',
             'urutan' => 'required|integer|min:0',
             'bobot' => 'required|numeric|min:0|max:100',
             'status' => 'required|in:aktif,nonaktif',
-            'catatan' => 'nullable|string',
         ]);
 
         try {
@@ -180,13 +286,11 @@ class ManageCurriculum extends Component
                 // Update existing aspek
                 $this->editingAspek->update([
                     'nama_aspek' => $this->nama_aspek,
-                    'deskripsi' => $this->deskripsi,
                     'tipe' => $this->tipe,
                     'parent_id' => $this->parent_id ?: null,
                     'urutan' => $this->urutan,
                     'bobot' => $this->bobot,
                     'status' => $this->status,
-                    'catatan' => $this->catatan,
                 ]);
                 
                 session()->flash('message', 'Aspek penilaian berhasil diperbarui');
@@ -196,12 +300,10 @@ class ManageCurriculum extends Component
                     'template_kurikulum_id' => $this->selectedTemplateId,
                     'parent_id' => $this->parent_id ?: null,
                     'nama_aspek' => $this->nama_aspek,
-                    'deskripsi' => $this->deskripsi,
                     'tipe' => $this->tipe,
                     'urutan' => $this->urutan,
                     'bobot' => $this->bobot,
                     'status' => $this->status,
-                    'catatan' => $this->catatan,
                 ]);
                 
                 session()->flash('message', 'Aspek penilaian berhasil ditambahkan');

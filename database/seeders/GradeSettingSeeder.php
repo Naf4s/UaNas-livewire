@@ -16,41 +16,67 @@ class GradeSettingSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get active template
-        $template = TemplateKurikulum::where('status', 'aktif')->first();
-        if (!$template) return;
+        // Check if grade settings already exist
+        if (GradeSetting::count() > 0) {
+            $this->command->info('Grade Settings data already exists, skipping...');
+            return;
+        }
 
-        // Get all active aspects
+        // Check dependencies
+        $template = TemplateKurikulum::where('status', 'aktif')->first();
+        if (!$template) {
+            $this->command->warn('No active template found. Please run TemplateKurikulumSeeder first.');
+            return;
+        }
+
         $aspects = AspekPenilaian::where('template_kurikulum_id', $template->id)
             ->where('status', 'aktif')
             ->get();
+            
+        if ($aspects->isEmpty()) {
+            $this->command->warn('No active aspects found for template. Please run TemplateKurikulumSeeder first.');
+            return;
+        }
 
-        // Get all active subjects
         $subjects = MataPelajaran::where('status', 'aktif')->get();
+        if ($subjects->isEmpty()) {
+            $this->command->warn('No active subjects found. Please run MataPelajaranSeeder first.');
+            return;
+        }
 
+        $this->command->info('Creating grade settings for ' . $aspects->count() . ' aspects and ' . $subjects->count() . ' subjects...');
+
+        $created = 0;
         foreach ($aspects as $aspect) {
             foreach ($subjects as $subject) {
                 // Determine input type based on aspect type
                 $inputType = $this->getInputTypeForAspect($aspect->tipe);
                 $options = $this->getOptionsForInputType($inputType);
                 
-                GradeSetting::create([
-                    'template_kurikulum_id' => $template->id,
-                    'aspek_penilaian_id' => $aspect->id,
-                    'mata_pelajaran_id' => $subject->id,
-                    'input_type' => $inputType,
-                    'nilai_min' => $this->getMinValueForAspect($aspect->tipe),
-                    'nilai_max' => $this->getMaxValueForAspect($aspect->tipe),
-                    'nilai_lulus' => $this->getPassValueForAspect($aspect->tipe),
-                    'options' => $options,
-                    'satuan' => $this->getUnitForAspect($aspect->tipe),
-                    'deskripsi_input' => $this->getDescriptionForAspect($aspect->tipe),
-                    'wajib_diisi' => true,
-                    'bisa_diubah' => true,
-                    'status' => 'aktif'
-                ]);
+                try {
+                    GradeSetting::create([
+                        'template_kurikulum_id' => $template->id,
+                        'aspek_penilaian_id' => $aspect->id,
+                        'mata_pelajaran_id' => $subject->id,
+                        'input_type' => $inputType,
+                        'nilai_min' => $this->getMinValueForAspect($aspect->tipe),
+                        'nilai_max' => $this->getMaxValueForAspect($aspect->tipe),
+                        'nilai_lulus' => $this->getPassValueForAspect($aspect->tipe),
+                        'options' => $options,
+                        'satuan' => $this->getUnitForAspect($aspect->tipe),
+                        'deskripsi_input' => $this->getDescriptionForAspect($aspect->tipe),
+                        'wajib_diisi' => true,
+                        'bisa_diubah' => true,
+                        'status' => 'aktif'
+                    ]);
+                    $created++;
+                } catch (\Exception $e) {
+                    $this->command->error('Failed to create grade setting for aspect ' . $aspect->nama_aspek . ' and subject ' . $subject->nama_mapel . ': ' . $e->getMessage());
+                }
             }
         }
+
+        $this->command->info('Successfully created ' . $created . ' grade settings.');
     }
 
     private function getInputTypeForAspect($tipe)

@@ -11,38 +11,75 @@
                 <x-app-logo />
             </a>
 
+            <!-- DASHBOARD & UTAMA -->
             <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Platform')" class="grid">
+                <flux:navlist.group :heading="__('Dashboard & Utama')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                </flux:navlist.group>
+            
+
+            <!-- MANAJEMEN AKADEMIK -->
+            
+                <flux:navlist.group :heading="'Manajemen Akademik'" class="grid">
+                    <flux:navlist.item icon="book-open-text" :href="route('mata-pelajaran.index')" :current="request()->routeIs('mata-pelajaran.*')" wire:navigate>Mata Pelajaran</flux:navlist.item>
+                    <flux:navlist.item icon="folder-git-2" :href="route('kurikulum.index')" :current="request()->routeIs('kurikulum.*')" wire:navigate>Kurikulum</flux:navlist.item>
+                    <flux:navlist.item icon="layout-grid" :href="route('penilaian.input')" :current="request()->routeIs('penilaian.*')" wire:navigate>Input Penilaian</flux:navlist.item>
+                </flux:navlist.group>
+            
+
+            <!-- MANAJEMEN KELAS & SISWA -->
+            
+                <flux:navlist.group :heading="'Manajemen Kelas & Siswa'" class="grid">
+                    <flux:navlist.item icon="layout-grid" :href="route('kelas.index')" :current="request()->routeIs('kelas.*')" wire:navigate>Kelas</flux:navlist.item>
+                    <flux:navlist.item icon="folder-git-2" :href="route('rombel.index')" :current="request()->routeIs('rombel.*')" wire:navigate>Rombel</flux:navlist.item>
+                    <flux:navlist.item icon="user" :href="route('siswa.index')" :current="request()->routeIs('siswa.*')" wire:navigate>Siswa</flux:navlist.item>
+                </flux:navlist.group>
+           
+
+            <!-- KEHADIRAN & MONITORING -->
+            
+                <flux:navlist.group :heading="'Kehadiran & Monitoring'" class="grid">
+                    <flux:navlist.item icon="calendar" :href="route('absensi.input')" :current="request()->routeIs('absensi.*')" wire:navigate>Input Absensi</flux:navlist.item>
+                    <flux:navlist.item icon="chevrons-up-down" :href="route('wali-kelas.catatan')" :current="request()->routeIs('wali-kelas.catatan')" wire:navigate>Catatan Wali Kelas</flux:navlist.item>
+                </flux:navlist.group>
+           
+
+            <!-- PENILAIAN & LAPORAN -->
+            
+                <flux:navlist.group :heading="'Penilaian & Laporan'" class="grid">
                     <flux:navlist.item icon="book-open-text" :href="route('cetak-rapor')" :current="request()->routeIs('cetak-rapor')" wire:navigate>Cetak Rapor</flux:navlist.item>
                     <flux:navlist.item icon="layout-grid" :href="route('rekap-nilai')" :current="request()->routeIs('rekap-nilai')" wire:navigate>Rekap Nilai</flux:navlist.item>
+                </flux:navlist.group>
+            
+
+            <!-- KENAIKAN KELAS -->
+            
+                <flux:navlist.group :heading="'Kenaikan Kelas'" class="grid">
+                    <flux:navlist.item icon="chevrons-up-down" :href="route('wali-kelas.usulan-kenaikan')" :current="request()->routeIs('wali-kelas.usulan-kenaikan')" wire:navigate>Usulan Kenaikan</flux:navlist.item>
                     <flux:navlist.item icon="chevrons-up-down" :href="route('validasi-kenaikan')" :current="request()->routeIs('validasi-kenaikan')" wire:navigate>Validasi Kenaikan</flux:navlist.item>
+                </flux:navlist.group>
+            
+
+            <!-- ADMINISTRASI -->
+            
+                <flux:navlist.group :heading="'Administrasi'" class="grid">
+                    <flux:navlist.item icon="user" :href="route('user-management.index')" :current="request()->routeIs('user-management.*')" wire:navigate>Manajemen User</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
 
-            <flux:navlist.group :heading="'Manajemen Data'" class="grid mt-4">
-                <flux:navlist.item icon="user" :href="route('user-management.index')" :current="request()->routeIs('user-management.*')" wire:navigate>Manajemen User</flux:navlist.item>
-                <flux:navlist.item icon="layout-grid" :href="route('kelas.index')" :current="request()->routeIs('kelas.*')" wire:navigate>Manajemen Kelas</flux:navlist.item>
-                <flux:navlist.item icon="folder-git-2" :href="route('rombel.index')" :current="request()->routeIs('rombel.*')" wire:navigate>Manajemen Rombel</flux:navlist.item>
-                <flux:navlist.item icon="user" :href="route('siswa.index')" :current="request()->routeIs('siswa.*')" wire:navigate>Manajemen Siswa</flux:navlist.item>
-                <flux:navlist.item icon="book-open-text" :href="route('mata-pelajaran.index')" :current="request()->routeIs('mata-pelajaran.*')" wire:navigate>Manajemen Mata Pelajaran</flux:navlist.item>
-                <flux:navlist.item icon="folder-git-2" :href="route('kurikulum.index')" :current="request()->routeIs('kurikulum.*')" wire:navigate>Manajemen Kurikulum</flux:navlist.item>
-                <flux:navlist.item icon="layout-grid" :href="route('penilaian.input')" :current="request()->routeIs('penilaian.*')" wire:navigate>Input Penilaian</flux:navlist.item>
-                <flux:navlist.item icon="calendar" :href="route('absensi.input')" :current="request()->routeIs('absensi.*')" wire:navigate>Input Absensi</flux:navlist.item>
-                <flux:navlist.item icon="chevrons-up-down" :href="route('wali-kelas.catatan')" :current="request()->routeIs('wali-kelas.catatan')" wire:navigate>Catatan Wali Kelas</flux:navlist.item>
-                <flux:navlist.item icon="chevrons-up-down" :href="route('wali-kelas.usulan-kenaikan')" :current="request()->routeIs('wali-kelas.usulan-kenaikan')" wire:navigate>Usulan Kenaikan Kelas</flux:navlist.item>
-            </flux:navlist.group>
-
             <flux:spacer />
 
+            <!-- RESOURCES -->
             <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                {{ __('Repository') }}
-                </flux:navlist.item>
+                <flux:navlist.group :heading="'Resources'" class="grid">
+                    <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
+                    {{ __('Repository') }}
+                    </flux:navlist.item>
 
-                <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                {{ __('Documentation') }}
-                </flux:navlist.item>
+                    <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
+                    {{ __('Documentation') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
             </flux:navlist>
 
             <!-- Desktop User Menu -->

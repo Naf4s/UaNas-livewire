@@ -9,10 +9,10 @@ use Livewire\WithFileUploads;
 use Livewire\Attributes\Rule;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
-use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\ToArray;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
 
 class SiswaImport extends Component
 {
@@ -28,6 +28,7 @@ class SiswaImport extends Component
     public $errorRows = 0;
     public $errors = [];
     public $isImporting = false;
+    public $currentStatus = '';
 
     public function import()
     {
@@ -36,48 +37,43 @@ class SiswaImport extends Component
         $this->resetProgress();
 
         try {
-            $data = Excel::toArray(new class implements ToModel, WithHeadingRow, WithValidation {
-                public function model(array $row)
+            $this->currentStatus = 'Membaca file Excel...';
+            
+            // Read Excel file
+            $data = Excel::toArray(new class implements ToArray, WithHeadingRow {
+                public function array(array $array): array
                 {
-                    return $row;
-                }
-
-                public function rules(): array
-                {
-                    return [
-                        'nis' => 'required|unique:siswa,nis',
-                        'nama_lengkap' => 'required',
-                        'jenis_kelamin' => 'required|in:L,P',
-                        'tempat_lahir' => 'required',
-                        'tanggal_lahir' => 'required|date',
-                        'agama' => 'required',
-                        'alamat' => 'required',
-                        'desa_kelurahan' => 'required',
-                        'kecamatan' => 'required',
-                        'kabupaten_kota' => 'required',
-                        'provinsi' => 'required',
-                        'tanggal_masuk' => 'required|date',
-                    ];
+                    return $array;
                 }
             }, $this->file)[0];
 
+            if (empty($data)) {
+                throw new \Exception('File Excel kosong atau tidak memiliki data yang valid.');
+            }
+
             $this->totalRows = count($data);
-            $this->processedRows = 0;
-            $this->successRows = 0;
-            $this->errorRows = 0;
-            $this->errors = [];
+            $this->currentStatus = 'Memulai proses import...';
+
+            // Validate headers
+            $requiredHeaders = ['nis', 'nama_lengkap', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'agama', 'alamat', 'desa_kelurahan', 'kecamatan', 'kabupaten_kota', 'provinsi', 'tanggal_masuk'];
+            $headers = array_keys($data[0]);
+            
+            $missingHeaders = array_diff($requiredHeaders, array_map('strtolower', $headers));
+            if (!empty($missingHeaders)) {
+                throw new \Exception('Header yang diperlukan tidak ditemukan: ' . implode(', ', $missingHeaders));
+            }
 
             foreach ($data as $index => $row) {
                 try {
+                    $this->currentStatus = "Memproses baris " . ($index + 2) . " dari {$this->totalRows}";
+                    
+                    // Validate required fields
+                    $this->validateRow($row, $index + 2);
+                    
                     DB::beginTransaction();
 
                     // Generate email if not provided
-                    $email = $row['email'] ?? strtolower(str_replace(' ', '', $row['nama_lengkap'])) . '@example.com';
-                    $counter = 1;
-                    while (User::where('email', $email)->exists()) {
-                        $email = strtolower(str_replace(' ', '', $row['nama_lengkap'])) . $counter . '@example.com';
-                        $counter++;
-                    }
+                    $email = $this->generateUniqueEmail($row['nama_lengkap']);
 
                     // Create user
                     $user = User::create([
@@ -96,7 +92,7 @@ class SiswaImport extends Component
                         'nisn' => $row['nisn'] ?? null,
                         'nama_lengkap' => $row['nama_lengkap'],
                         'nama_panggilan' => $row['nama_panggilan'] ?? null,
-                        'jenis_kelamin' => $row['jenis_kelamin'],
+                        'jenis_kelamin' => strtoupper($row['jenis_kelamin']),
                         'tempat_lahir' => $row['tempat_lahir'],
                         'tanggal_lahir' => $row['tanggal_lahir'],
                         'agama' => $row['agama'],
@@ -130,20 +126,108 @@ class SiswaImport extends Component
                 } catch (\Exception $e) {
                     DB::rollback();
                     $this->errorRows++;
-                    $this->errors[] = "Baris " . ($index + 2) . ": " . $e->getMessage();
+                    $this->errors[] = [
+                        'row' => $index + 2,
+                        'field' => 'General',
+                        'message' => $e->getMessage()
+                    ];
+                    
+                    Log::error('Import siswa error pada baris ' . ($index + 2) . ': ' . $e->getMessage());
                 }
 
                 $this->processedRows++;
                 $this->progress = ($this->processedRows / $this->totalRows) * 100;
             }
 
+            $this->currentStatus = 'Import selesai!';
             session()->flash('message', "Import selesai! Berhasil: {$this->successRows}, Gagal: {$this->errorRows}");
             $this->isImporting = false;
 
         } catch (\Exception $e) {
+            $this->currentStatus = 'Terjadi error!';
             session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
             $this->isImporting = false;
+            Log::error('Import siswa error: ' . $e->getMessage());
         }
+    }
+
+    private function validateRow($row, $rowNumber)
+    {
+        $errors = [];
+
+        // Required fields validation
+        $requiredFields = [
+            'nis' => 'NIS',
+            'nama_lengkap' => 'Nama Lengkap',
+            'jenis_kelamin' => 'Jenis Kelamin',
+            'tempat_lahir' => 'Tempat Lahir',
+            'tanggal_lahir' => 'Tanggal Lahir',
+            'agama' => 'Agama',
+            'alamat' => 'Alamat',
+            'desa_kelurahan' => 'Desa/Kelurahan',
+            'kecamatan' => 'Kecamatan',
+            'kabupaten_kota' => 'Kabupaten/Kota',
+            'provinsi' => 'Provinsi',
+            'tanggal_masuk' => 'Tanggal Masuk'
+        ];
+
+        foreach ($requiredFields as $field => $label) {
+            if (empty($row[$field])) {
+                $errors[] = "Field {$label} wajib diisi";
+            }
+        }
+
+        // NIS validation
+        if (!empty($row['nis'])) {
+            if (Siswa::where('nis', $row['nis'])->exists()) {
+                $errors[] = "NIS {$row['nis']} sudah terdaftar";
+            }
+        }
+
+        // Jenis kelamin validation
+        if (!empty($row['jenis_kelamin'])) {
+            $jenisKelamin = strtoupper($row['jenis_kelamin']);
+            if (!in_array($jenisKelamin, ['L', 'P'])) {
+                $errors[] = "Jenis kelamin harus L atau P";
+            }
+        }
+
+        // Date validation
+        if (!empty($row['tanggal_lahir'])) {
+            if (!$this->isValidDate($row['tanggal_lahir'])) {
+                $errors[] = "Format tanggal lahir tidak valid";
+            }
+        }
+
+        if (!empty($row['tanggal_masuk'])) {
+            if (!$this->isValidDate($row['tanggal_masuk'])) {
+                $errors[] = "Format tanggal masuk tidak valid";
+            }
+        }
+
+        if (!empty($errors)) {
+            throw new \Exception(implode(', ', $errors));
+        }
+    }
+
+    private function isValidDate($date)
+    {
+        $d = \DateTime::createFromFormat('Y-m-d', $date);
+        return $d && $d->format('Y-m-d') === $date;
+    }
+
+    private function generateUniqueEmail($namaLengkap)
+    {
+        $baseEmail = strtolower(str_replace(' ', '', $namaLengkap)) . '@example.com';
+        $email = $baseEmail;
+        $counter = 1;
+        
+        while (User::where('email', $email)->exists()) {
+            $email = strtolower(str_replace(' ', '', $namaLengkap)) . $counter . '@example.com';
+            $counter++;
+        }
+        
+        return $email;
     }
 
     public function resetProgress()
@@ -154,54 +238,75 @@ class SiswaImport extends Component
         $this->successRows = 0;
         $this->errorRows = 0;
         $this->errors = [];
+        $this->currentStatus = '';
     }
 
     public function downloadTemplate()
     {
-        // Generate sample Excel template
-        $data = [
-            [
-                'nis' => '2024001',
-                'nisn' => '1234567890',
-                'nama_lengkap' => 'Ahmad Siswa',
-                'nama_panggilan' => 'Ahmad',
-                'jenis_kelamin' => 'L',
-                'tempat_lahir' => 'Jakarta',
-                'tanggal_lahir' => '2006-01-15',
-                'agama' => 'Islam',
-                'alamat' => 'Jl. Contoh No. 123',
-                'rt_rw' => '001/002',
-                'desa_kelurahan' => 'Contoh',
-                'kecamatan' => 'Contoh',
-                'kabupaten_kota' => 'Jakarta Selatan',
-                'provinsi' => 'DKI Jakarta',
-                'kode_pos' => '12345',
-                'no_hp' => '08123456789',
-                'nama_ayah' => 'Bapak Siswa',
-                'pekerjaan_ayah' => 'Wiraswasta',
-                'no_hp_ayah' => '08123456788',
-                'nama_ibu' => 'Ibu Siswa',
-                'pekerjaan_ibu' => 'Ibu Rumah Tangga',
-                'no_hp_ibu' => '08123456787',
-                'alamat_ortu' => 'Jl. Contoh No. 123',
-                'tanggal_masuk' => '2024-07-01',
-                'keterangan' => 'Siswa baru'
-            ]
-        ];
+        try {
+            $data = [
+                [
+                    'nis' => '2024001',
+                    'nisn' => '1234567890',
+                    'nama_lengkap' => 'Ahmad Siswa',
+                    'nama_panggilan' => 'Ahmad',
+                    'jenis_kelamin' => 'L',
+                    'tempat_lahir' => 'Jakarta',
+                    'tanggal_lahir' => '2006-01-15',
+                    'agama' => 'Islam',
+                    'alamat' => 'Jl. Contoh No. 123',
+                    'rt_rw' => '001/002',
+                    'desa_kelurahan' => 'Contoh',
+                    'kecamatan' => 'Contoh',
+                    'kabupaten_kota' => 'Jakarta Selatan',
+                    'provinsi' => 'DKI Jakarta',
+                    'kode_pos' => '12345',
+                    'no_hp' => '08123456789',
+                    'nama_ayah' => 'Bapak Siswa',
+                    'pekerjaan_ayah' => 'Wiraswasta',
+                    'no_hp_ayah' => '08123456788',
+                    'nama_ibu' => 'Ibu Siswa',
+                    'pekerjaan_ibu' => 'Ibu Rumah Tangga',
+                    'no_hp_ibu' => '08123456787',
+                    'alamat_ortu' => 'Jl. Contoh No. 123',
+                    'tanggal_masuk' => '2024-07-01',
+                    'keterangan' => 'Siswa baru'
+                ]
+            ];
 
-        return Excel::download(new class($data) implements \Maatwebsite\Excel\Concerns\FromArray {
-            private $data;
-            
-            public function __construct($data)
-            {
-                $this->data = $data;
-            }
-            
-            public function array(): array
-            {
-                return $this->data;
-            }
-        }, 'template_import_siswa.xlsx');
+            $headers = [
+                'nis', 'nisn', 'nama_lengkap', 'nama_panggilan', 'jenis_kelamin', 
+                'tempat_lahir', 'tanggal_lahir', 'agama', 'alamat', 'rt_rw', 
+                'desa_kelurahan', 'kecamatan', 'kabupaten_kota', 'provinsi', 
+                'kode_pos', 'no_hp', 'nama_ayah', 'pekerjaan_ayah', 'no_hp_ayah', 
+                'nama_ibu', 'pekerjaan_ibu', 'no_hp_ibu', 'alamat_ortu', 
+                'tanggal_masuk', 'keterangan'
+            ];
+
+            $templateData = array_merge([$headers], $data);
+
+            return Excel::download(new class($templateData) implements \Maatwebsite\Excel\Concerns\FromArray {
+                private $data;
+                
+                public function __construct($data)
+                {
+                    $this->data = $data;
+                }
+                
+                public function array(): array
+                {
+                    return $this->data;
+                }
+            }, 'template_import_siswa.xlsx');
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal mengunduh template: ' . $e->getMessage());
+        }
+    }
+
+    public function clearErrors()
+    {
+        $this->errors = [];
     }
 
     public function render()

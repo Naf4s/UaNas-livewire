@@ -19,7 +19,7 @@ class ReportGenerator extends Component
      */
     public function mount()
     {
-        $this->siswaList = Siswa::with('kelas')->orderBy('nama')->get();
+        $this->siswaList = Siswa::orderBy('nama_lengkap')->get();
     }
 
     /**
@@ -39,25 +39,29 @@ class ReportGenerator extends Component
             $this->reportData = null;
             return;
         }
-        $siswa = Siswa::with(['kelas', 'rombels', 'grades.mataPelajaran'])->find($this->selectedSiswaId);
+        
+        $siswa = Siswa::with(['rombel.kelas', 'grades.mataPelajaran'])->find($this->selectedSiswaId);
         if (!$siswa) {
             $this->reportData = null;
             return;
         }
+        
         $grades = Grade::where('siswa_id', $siswa->id)
             ->with('mataPelajaran')
             ->get();
+            
         $nilai = $grades->map(function($grade) {
             return [
-                'mata_pelajaran' => $grade->mataPelajaran->nama ?? '-',
+                'mata_pelajaran' => $grade->mataPelajaran->nama_mapel ?? '-',
                 'nilai' => $grade->nilai,
-                'keterangan' => $grade->keterangan,
+                'keterangan' => $grade->keterangan ?? '-',
             ];
         });
+        
         $this->reportData = [
             'siswa' => $siswa,
-            'kelas' => $siswa->kelas,
-            'rombels' => $siswa->rombels,
+            'kelas' => $siswa->kelas, // Using the accessor
+            'rombels' => $siswa->rombel,
             'nilai' => $nilai,
         ];
     }

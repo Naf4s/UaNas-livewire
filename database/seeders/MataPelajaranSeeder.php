@@ -13,176 +13,214 @@ class MataPelajaranSeeder extends Seeder
      */
     public function run(): void
     {
+        // Check if data already exists
+        if (MataPelajaran::count() > 0) {
+            $this->command->info('Mata Pelajaran data already exists, skipping...');
+            return;
+        }
+
         $mataPelajaran = [
-            // Kelompok A (Wajib)
+            // Kelompok A - Mata Pelajaran Wajib
             [
                 'kode_mapel' => 'PAI',
                 'nama_mapel' => 'Pendidikan Agama Islam dan Budi Pekerti',
-                'deskripsi' => 'Mata pelajaran wajib untuk semua siswa',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan nilai-nilai agama Islam dan budi pekerti',
                 'jenis' => 'Wajib',
                 'jumlah_jam' => 3,
                 'kelompok' => 'A',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran wajib nasional'
+                'catatan' => 'Mata pelajaran wajib untuk semua siswa'
             ],
             [
                 'kode_mapel' => 'PPKN',
                 'nama_mapel' => 'Pendidikan Pancasila dan Kewarganegaraan',
-                'deskripsi' => 'Mata pelajaran wajib untuk semua siswa',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan nilai-nilai Pancasila dan kewarganegaraan',
                 'jenis' => 'Wajib',
                 'jumlah_jam' => 2,
                 'kelompok' => 'A',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran wajib nasional'
+                'catatan' => 'Mata pelajaran wajib untuk semua siswa'
             ],
             [
-                'kode_mapel' => 'BIN',
+                'kode_mapel' => 'BINDO',
                 'nama_mapel' => 'Bahasa Indonesia',
-                'deskripsi' => 'Mata pelajaran wajib untuk semua siswa',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan kemampuan berbahasa Indonesia',
                 'jenis' => 'Wajib',
                 'jumlah_jam' => 4,
                 'kelompok' => 'A',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran wajib nasional'
+                'catatan' => 'Mata pelajaran wajib untuk semua siswa'
             ],
             [
-                'kode_mapel' => 'MTK',
+                'kode_mapel' => 'MAT',
                 'nama_mapel' => 'Matematika',
-                'deskripsi' => 'Mata pelajaran wajib untuk semua siswa',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan konsep matematika dan pemecahan masalah',
                 'jenis' => 'Wajib',
                 'jumlah_jam' => 4,
                 'kelompok' => 'A',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran wajib nasional'
+                'catatan' => 'Mata pelajaran wajib untuk semua siswa'
             ],
             [
                 'kode_mapel' => 'SEJ',
                 'nama_mapel' => 'Sejarah Indonesia',
-                'deskripsi' => 'Mata pelajaran wajib untuk semua siswa',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan sejarah bangsa Indonesia',
                 'jenis' => 'Wajib',
                 'jumlah_jam' => 2,
                 'kelompok' => 'A',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran wajib nasional'
+                'catatan' => 'Mata pelajaran wajib untuk semua siswa'
             ],
             [
-                'kode_mapel' => 'BIG',
+                'kode_mapel' => 'ING',
                 'nama_mapel' => 'Bahasa Inggris',
-                'deskripsi' => 'Mata pelajaran wajib untuk semua siswa',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan kemampuan berbahasa Inggris',
                 'jenis' => 'Wajib',
                 'jumlah_jam' => 2,
                 'kelompok' => 'A',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran wajib nasional'
+                'catatan' => 'Mata pelajaran wajib untuk semua siswa'
             ],
 
-            // Kelompok B (Wajib)
+            // Kelompok B - Mata Pelajaran Wajib
             [
-                'kode_mapel' => 'SEN',
+                'kode_mapel' => 'SENBUD',
                 'nama_mapel' => 'Seni Budaya',
-                'deskripsi' => 'Mata pelajaran wajib untuk semua siswa',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan apresiasi seni dan budaya',
                 'jenis' => 'Wajib',
                 'jumlah_jam' => 2,
                 'kelompok' => 'B',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran wajib nasional'
+                'catatan' => 'Mata pelajaran wajib untuk semua siswa'
             ],
             [
-                'kode_mapel' => 'PJK',
+                'kode_mapel' => 'PJOK',
                 'nama_mapel' => 'Pendidikan Jasmani, Olahraga, dan Kesehatan',
-                'deskripsi' => 'Mata pelajaran wajib untuk semua siswa',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan kebugaran jasmani dan kesehatan',
                 'jenis' => 'Wajib',
                 'jumlah_jam' => 3,
                 'kelompok' => 'B',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran wajib nasional'
+                'catatan' => 'Mata pelajaran wajib untuk semua siswa'
             ],
             [
-                'kode_mapel' => 'PRA',
+                'kode_mapel' => 'PRAKARYA',
                 'nama_mapel' => 'Prakarya dan Kewirausahaan',
-                'deskripsi' => 'Mata pelajaran wajib untuk semua siswa',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan keterampilan dan kewirausahaan',
                 'jenis' => 'Wajib',
                 'jumlah_jam' => 2,
                 'kelompok' => 'B',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran wajib nasional'
+                'catatan' => 'Mata pelajaran wajib untuk semua siswa'
             ],
 
-            // Kelompok C (Peminatan IPA)
+            // Kelompok C - Mata Pelajaran Peminatan (IPA)
             [
                 'kode_mapel' => 'FIS',
                 'nama_mapel' => 'Fisika',
-                'deskripsi' => 'Mata pelajaran peminatan untuk jurusan IPA',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan konsep-konsep fisika',
                 'jenis' => 'Peminatan',
-                'jumlah_jam' => 4,
+                'jumlah_jam' => 3,
                 'kelompok' => 'C',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran peminatan IPA'
+                'catatan' => 'Mata pelajaran peminatan untuk jurusan IPA'
             ],
             [
                 'kode_mapel' => 'KIM',
                 'nama_mapel' => 'Kimia',
-                'deskripsi' => 'Mata pelajaran peminatan untuk jurusan IPA',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan konsep-konsep kimia',
                 'jenis' => 'Peminatan',
-                'jumlah_jam' => 4,
+                'jumlah_jam' => 3,
                 'kelompok' => 'C',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran peminatan IPA'
+                'catatan' => 'Mata pelajaran peminatan untuk jurusan IPA'
             ],
             [
                 'kode_mapel' => 'BIO',
                 'nama_mapel' => 'Biologi',
-                'deskripsi' => 'Mata pelajaran peminatan untuk jurusan IPA',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan konsep-konsep biologi',
                 'jenis' => 'Peminatan',
-                'jumlah_jam' => 4,
+                'jumlah_jam' => 3,
                 'kelompok' => 'C',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran peminatan IPA'
+                'catatan' => 'Mata pelajaran peminatan untuk jurusan IPA'
             ],
 
-            // Kelompok C (Peminatan IPS)
+            // Kelompok C - Mata Pelajaran Peminatan (IPS)
             [
                 'kode_mapel' => 'GEO',
                 'nama_mapel' => 'Geografi',
-                'deskripsi' => 'Mata pelajaran peminatan untuk jurusan IPS',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan konsep-konsep geografi',
                 'jenis' => 'Peminatan',
-                'jumlah_jam' => 4,
+                'jumlah_jam' => 3,
                 'kelompok' => 'C',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran peminatan IPS'
+                'catatan' => 'Mata pelajaran peminatan untuk jurusan IPS'
             ],
             [
                 'kode_mapel' => 'EKO',
                 'nama_mapel' => 'Ekonomi',
-                'deskripsi' => 'Mata pelajaran peminatan untuk jurusan IPS',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan konsep-konsep ekonomi',
                 'jenis' => 'Peminatan',
-                'jumlah_jam' => 4,
+                'jumlah_jam' => 3,
                 'kelompok' => 'C',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran peminatan IPS'
+                'catatan' => 'Mata pelajaran peminatan untuk jurusan IPS'
             ],
             [
                 'kode_mapel' => 'SOS',
                 'nama_mapel' => 'Sosiologi',
-                'deskripsi' => 'Mata pelajaran peminatan untuk jurusan IPS',
+                'deskripsi' => 'Mata pelajaran yang mengajarkan konsep-konsep sosiologi',
                 'jenis' => 'Peminatan',
-                'jumlah_jam' => 4,
+                'jumlah_jam' => 3,
                 'kelompok' => 'C',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran peminatan IPS'
+                'catatan' => 'Mata pelajaran peminatan untuk jurusan IPS'
             ],
 
-            // Muatan Lokal
+            // Mata Pelajaran Lintas Minat
             [
-                'kode_mapel' => 'BJD',
-                'nama_mapel' => 'Bahasa Jawa',
-                'deskripsi' => 'Mata pelajaran muatan lokal',
-                'jenis' => 'Muatan Lokal',
+                'kode_mapel' => 'BINDA',
+                'nama_mapel' => 'Bahasa dan Sastra Indonesia',
+                'deskripsi' => 'Mata pelajaran lintas minat untuk pengembangan bahasa',
+                'jenis' => 'Lintas Minat',
                 'jumlah_jam' => 2,
                 'kelompok' => 'C',
                 'status' => 'aktif',
-                'catatan' => 'Mata pelajaran muatan lokal Jawa'
+                'catatan' => 'Mata pelajaran lintas minat'
             ],
+            [
+                'kode_mapel' => 'BING',
+                'nama_mapel' => 'Bahasa dan Sastra Inggris',
+                'deskripsi' => 'Mata pelajaran lintas minat untuk pengembangan bahasa Inggris',
+                'jenis' => 'Lintas Minat',
+                'jumlah_jam' => 2,
+                'kelompok' => 'C',
+                'status' => 'aktif',
+                'catatan' => 'Mata pelajaran lintas minat'
+            ],
+
+            // Mata Pelajaran Muatan Lokal
+            [
+                'kode_mapel' => 'BSUNDA',
+                'nama_mapel' => 'Bahasa Sunda',
+                'deskripsi' => 'Mata pelajaran muatan lokal untuk pengembangan bahasa daerah',
+                'jenis' => 'Muatan Lokal',
+                'jumlah_jam' => 2,
+                'kelompok' => 'B',
+                'status' => 'aktif',
+                'catatan' => 'Mata pelajaran muatan lokal sesuai karakteristik daerah'
+            ],
+            [
+                'kode_mapel' => 'KEWIRA',
+                'nama_mapel' => 'Kewirausahaan',
+                'deskripsi' => 'Mata pelajaran muatan lokal untuk pengembangan jiwa wirausaha',
+                'jenis' => 'Muatan Lokal',
+                'jumlah_jam' => 2,
+                'kelompok' => 'B',
+                'status' => 'aktif',
+                'catatan' => 'Mata pelajaran muatan lokal sesuai kebutuhan daerah'
+            ]
         ];
 
         foreach ($mataPelajaran as $mapel) {

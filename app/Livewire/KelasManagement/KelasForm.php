@@ -14,11 +14,8 @@ class KelasForm extends Component
     #[Rule('required|string|max:255')]
     public $nama_kelas = '';
 
-    #[Rule('required|in:X,XI,XII')]
-    public $tingkat = 'X';
-
-    #[Rule('nullable|string|max:255')]
-    public $jurusan = '';
+    #[Rule('required|in:I,II,III,IV,V,VI')]
+    public $tingkat = 'I';
 
     #[Rule('nullable|string')]
     public $deskripsi = '';
@@ -33,7 +30,6 @@ class KelasForm extends Component
             $this->isEditing = true;
             $this->nama_kelas = $this->kelas->nama_kelas;
             $this->tingkat = $this->kelas->tingkat;
-            $this->jurusan = $this->kelas->jurusan;
             $this->deskripsi = $this->kelas->deskripsi;
             $this->status = $this->kelas->status;
         } else {
@@ -49,7 +45,6 @@ class KelasForm extends Component
             $this->kelas->update([
                 'nama_kelas' => $this->nama_kelas,
                 'tingkat' => $this->tingkat,
-                'jurusan' => $this->jurusan,
                 'deskripsi' => $this->deskripsi,
                 'status' => $this->status,
             ]);
@@ -57,7 +52,6 @@ class KelasForm extends Component
             Kelas::create([
                 'nama_kelas' => $this->nama_kelas,
                 'tingkat' => $this->tingkat,
-                'jurusan' => $this->jurusan,
                 'deskripsi' => $this->deskripsi,
                 'status' => $this->status,
             ]);
